@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+	<section class="content">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="card-body">
+					<div class="container-fluid">
+						<div class="row">
+							<!-- left column -->
+							<div class="col-md-7">
+								<div id="map" style="height: 650px;"></div>
+							</div>
+								<!-- right column -->
+							<div class="col-md-5">
+								<div class="card card-primary">
+									<div class="card-header">
+											<h3 class="card-title">Rekomendasi {{tipe_lok}} untuk Anda</h3>
+									</div>
+									<div class="card-body">
+										<!-- table skyline -->
+										<table id="example2" class="table table-bordered table-hover">
+											<thead>
+												<tr>
+													<th>Nama {{tipe_lok}}</th>
+													<th>Rating</th>
+
+													{% for objects in object_count %}
+													<th>Jumlah {{objects}}</th>
+													
+													{% endfor %}
+												</tr>
+											</thead>
+											<tbody>
+												{% for data in datas %}
+												<tr>
+													{% for dt in data.values %}
+														<td>{{ dt }}</td>
+													{% endfor %}											
+												</tr>
+												{% endfor %}
+											</tbody>
+										</table>
+										 <p></p>
+                    <div class=""  align='right'><a href="{% url 'basedsurrounding:dashboard' %}">Kembali ke halaman pencarian</a></div>
+                  </div>
+                </div>
+                <ul style="list-style-type:none; padding: 0;">
+                  <li><img src="{% static 'images/hijau.png' %}" style="height:20px;"> Lokasi acuan Anda</li>
+                  <li><img src="{% static 'images/merah.png' %}" style="height:20px;"> Rekomendasi {{tipe_lok}} untuk Anda</li>
+                </ul>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+
+<!-- for map -->
+<script>
+	function initMap() {
+		var map = new google.maps.Map(document.getElementById('map'), {
+			zoom: 15,
+			center: {lat: {{dts.0}}, lng: {{dts.1}}},
+		});
+
+		setMarkers(map);
+		setMarker(map);
+		}
+		function setMarkers(map) {
+			{% for data_geo in datas_geo %}
+				var marker = new google.maps.Marker({
+					position: {lat: {{data_geo.1}}, lng: {{data_geo.2}}},
+					map: map,
+					icon: {url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"},
+				});
+			{% endfor %}
+		}
+
+		function setMarker(map) {
+				var marker = new google.maps.Marker({
+					position: {lat: {{dts.0}}, lng: {{dts.1}}},
+					map: map,
+					icon: {
+						url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+					}
+				});
+				google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(20);
+          map.panTo(this.getPosition());
+     });
+		}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap"></script>
+
+{% endblock %}

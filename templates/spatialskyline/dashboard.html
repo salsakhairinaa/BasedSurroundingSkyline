@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+  <section class="content">
+    <div class="card-body">
+      <div class="row">
+          <!-- left column -->
+          <div class="col-md-9">
+            <div id="map" style="height: 700px;"></div>
+          </div>
+          <!-- right column -->
+        <div class="col-md-3">
+          <div class="card card-primary">
+            <div class="card-header">
+              <h3 class="card-title">Pencarian Lokasi</h3>
+            </div>
+            {% if messages %}
+                {% for message in messages %}
+                  <div class="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+            {% endif %}
+            <form method="POST">
+              {% csrf_token %}
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Jenis tempat*</label>
+                    <select class="form-control select2bs4" name="tipe_poi" style="width: 100%;" data-placeholder="Pilih jenis tempat yang ingin dicari">
+                      {% for poi in form.tipe_poi %}
+                        {{ poi }}
+                      {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                  <label>Minimum rating tempat</label>
+                    <select class="form-control select2bs4" name="min_rating" style="width: 100%;" data-placeholder="Masukkan minimum rating tempat">
+                      {% for rating in form.min_rating %}
+                        {{ rating }}
+                      {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                  <label>Lokasi yang dipertimbangkan dalam pencarian*</label>
+                    <input type="text" name="query-0-lokasi"  class="form-control autocomplete" placeholder="Masukkan Lokasi 1*"><p></p>
+                    <input type="text" name="query-1-lokasi"  class="form-control autocomplete" placeholder="Masukkan Lokasi 2*"><p></p>
+                    <input type="text" name="query-2-lokasi"  class="form-control autocomplete" placeholder="Masukkan Lokasi 3"><p></p>
+                    <input type="text" name="query-3-lokasi"  class="form-control autocomplete" placeholder="Masukkan Lokasi 4"><p></p>
+                    <input type="text" name="query-4-lokasi"  class="form-control autocomplete" placeholder="Masukkan Lokasi 5">
+                    <p align='right'><small style="text-align: right;"><i><b>*harus diisi</b></i></small></p>
+                </div>
+                {{ formset.management_form }}
+                <button type="submit" class="btn btn-primary btn-block">Proses</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_script %}
+  <script>
+    function initAutocomplete() {
+      var map = new google.maps.Map(document.getElementById('map'), {
+        center: {lat: -6.596212, lng:  106.806308},
+        zoom: 10,
+        mapTypeId: 'roadmap'
+      });
+      var markers = [];
+
+      // Create the search boxs and link them to the UI elements.
+      var searchBoxes = document.getElementsByClassName('form-control autocomplete');
+      for (var i = 0; i < searchBoxes.length; i++) {
+        var searchBox = new google.maps.places.SearchBox(searchBoxes[i]);
+        // Bias the SearchBox results towards current map's viewport.
+        map.addListener('bounds_changed', function() {
+          searchBox.setBounds(map.getBounds());
+        });
+        markers.push([]);
+        // Listen for the event fired when the user selects a prediction and retrieve
+        // more details for that place.
+        searchBox.addListener('places_changed', (function(i) {
+          return function() {
+            processSearch(i, this)
+          }
+        } (i)));
+      }
+
+      function processSearch(id, searchBox) {
+        var places = searchBox.getPlaces();
+
+        if (places.length == 0) {
+          return;
+        }
+
+        // Clear out the old markers.
+        markers[id].forEach(function(marker) {
+          marker.setMap(null);
+        });
+        markers[id] = [];
+
+        // For each place, get the icon, name and location.
+        var bounds = new google.maps.LatLngBounds();
+        places.forEach(function(place) {
+          if (!place.geometry) {
+            console.log("Returned place contains no geometry");
+            return;
+          }
+
+          // Create a marker for each place.
+          if (!markers[id]) markers.push([]);
+          markers[id].push(new google.maps.Marker({
+            map: map,
+            title: place.name,
+            position: place.geometry.location
+          }));
+
+          if (place.geometry.viewport) {
+            // Only geocodes have viewport.
+            bounds.union(place.geometry.viewport);
+          } else {
+            bounds.extend(place.geometry.location);
+          }
+        });
+        map.fitBounds(bounds);
+      }
+    }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{api_key}}&libraries=places&callback=initAutocomplete"
+         async defer></script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="card-body">
+          <div class="container-fluid">
+            <div class="row">
+              <!-- left column -->
+              <div class="col-md-9">
+                <div id="map" style="height: 700px;"></div>
+
+              </div>
+                <!-- right column -->
+              <div class="col-md-3">
+                <div class="card card-primary">
+                  <div class="card-header">
+                    <h3 class="card-title">Pilihan {{ poi }} untuk Anda</h3>
+                  </div>
+                  <div class="card-body">
+                    <table id="skyline" class="table table-bordered table-hover">
+                      <thead>
+                        <tr>
+                          <th>Nama</th>
+                          <th width='10%'>Rating</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% if hasil %}
+                          <tr>
+                            <td>{{ hasil }}</td>
+                          </tr>
+                        {% endif %}
+                        {% for sky in skyline %}
+                        <tr>
+                          <td>{{ sky.nama_poi }}</td>
+                          <td>{{ sky.rating }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                    <p></p>
+                    <div class=""  align='right'><a href="{% url 'spatialskyline:dashboard' %}">Kembali ke halaman pencarian</a></div>
+                  </div>
+                </div>
+                <ul style="list-style-type:none; padding: 0;">
+                  <li><img src="{% static 'images/hijau.png' %}" style="height:20px;"> Pilihan {{ poi }} untuk Anda</li>
+                  <li><img src="{% static 'images/biru.png' %}" style="height:20px;"> Lokasi yang dipertimbangkan dalam pemilihan {{ poi }}</li>
+                  <li><img src="{% static 'images/merah.png' %}" style="height:20px;"> {{ poi }} lainnya</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+
+<script>
+  function initMap() {
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 13,
+      center: {lat: {{poi_data.0.latitude}}, lng:  {{poi_data.0.longitude}}}
+    });
+
+    setMarkers(map);
+  }
+  function setMarkers(map) {
+    {% for sky in skyline %}
+      var marker = new google.maps.Marker({
+        position: {lat: {{sky.latitude}}, lng: {{sky.longitude}}},
+        animation: google.maps.Animation.DROP,
+        map: map,
+        icon: {
+              url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+              scaledSize: new google.maps.Size(40, 40),
+        },
+      });
+      google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(20);
+          map.panTo(this.getPosition());
+     });
+
+    {% endfor %}
+    {% for poi in poi_data %}
+      var marker = new google.maps.Marker({
+        position: {lat: {{poi.latitude}}, lng: {{poi.longitude}}},
+        animation: google.maps.Animation.DROP,
+        map: map,
+        icon: {url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"},
+      });
+      google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(20);
+          map.panTo(this.getPosition());
+     });
+    {% endfor %}
+    {% for query in query_data %}
+      var marker = new google.maps.Marker({
+        position: {lat: {{query.latitude}}, lng: {{query.longitude}}},
+        animation: google.maps.Animation.DROP,
+        map: map,
+        icon: {url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"},
+      });
+      google.maps.event.addListener(marker, 'click', function() {
+          map.setZoom(20);
+          map.panTo(this.getPosition());
+     });
+    {% endfor %}
+  }
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{api_key}}&callback=initMap"></script>
+
+{% endblock %}

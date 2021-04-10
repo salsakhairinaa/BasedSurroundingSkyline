@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+	<section class="content">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="card-body">
+							<div class="container-fluid">
+								<div class="row">
+									<!-- left column -->
+									<div class="col-md-8">
+									  <div id="map" style="height: 650px;"></div>
+									</div>
+									<!-- right column -->
+									<div class="col-md-4">
+										<div class="card card-primary">
+											<div class="card-header">
+												<h3 class="card-title">Pencarian Lokasi</h3>
+											</div>
+											{% if messages %}
+												<ul class="messages">
+														{% for message in messages %}
+														<li{% if message.tags %} class="{{ message.tags }}"{% endif %}><strong>{{ message }}</strong></li>
+														{% endfor %}
+												</ul>
+											{% endif %}
+											{% if errors %}
+												<p><strong><center>{{errors}}</center></strong></p>
+											{% endif %}
+											<form method="POST">
+												{% csrf_token %}
+												<div class="card-body">
+													<div class="form-group">
+														<label>Lokasi Acuan*</label>
+														<input type="text" id="wilayah" name="location_target" class="form-control" placeholder="Contoh: IPB University">
+													</div>
+													<div class="form-group">
+														<label for="target_type">Jenis Objek yang Dicari*</label>
+															<select class="select2bs4" name="target_type" style="width: 100%;" data-placeholder="Pilih jenis objek sekitar lokasi acuan">
+																<option disabled selected value=""></option>
+																{% for poi in form.target_type %}
+																	{{poi}}
+																{% endfor %}
+															</select>
+													</div>
+													<div class="form-group">
+														<label>Maksimum Radius Objek (meter)*</label>
+														<input type="text" name="radius_target" class="form-control" placeholder="Masukkan radius maksimum objek dari lokasi acuan">
+													</div>
+													<div class="form-group">
+														<label for="object_type">Jenis Fasilitas Sekitar Objek*</label>
+															<select class="select2bs4" name="object_type" multiple="multiple" style="width: 100%;" data-placeholder="Pilih jenis fasilitas (bisa lebih dari satu)">
+																{% for tipe in form.object_type %}
+																	{{tipe}}
+																{% endfor %}
+															</select>
+													</div>
+													<div class="form-group">
+														<label>Maksimum Radius Fasilitas Sekitar (meter)*</label>
+														<input type="text" name="radius_object" class="form-control" placeholder="Masukkan radius maksimum fasilitas dari objek">
+													</div>
+													<div class="form-group">
+														<label>Minimum Rating Fasilitas Sekitar*</label>
+														<select class="select2bs4" name="rating" style="width: 100%;" data-placeholder="Pilih minimum rating fasilitas">
+																<option disabled selected value="">Pilih minimal rating fasilitas</option>
+																<option value="0">Tidak ada</option>
+																<option value="1">1</option>
+																<option value="2">2</option>
+																<option value="3">3</option>
+																<option value="4">4</option>
+																<option value="5">5</option>
+															</select>
+														<p align='right'><small style="text-align: right;"><i><b>*harus diisi</b></i></small></p>
+													</div>
+													{{ formset.management_form }}
+													<button type="submit" class="btn btn-primary btn-block">Proses</button>
+												</div>
+											</form>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+
+	function initAutocomplete() {
+		//var originalMapCenter = new google.maps.LatLng(-6.596212, 106.806308);
+		var map = new google.maps.Map(document.getElementById('map'), {
+			center: {lat: -6.596212, lng:  106.806308},
+			//center: originalMapCenter
+			zoom: 13,
+			mapTypeId: 'roadmap'
+		});
+
+		var input = document.getElementById('wilayah');
+		var searchBox = new google.maps.places.SearchBox(input);
+		map.controls.push(input);
+
+		map.addListener('bounds_changed', function() {
+			searchBox.setBounds(map.getBounds());
+		});
+
+		var markers = [];
+		searchBox.addListener('places_changed', function() {
+			var places = searchBox.getPlaces();
+
+			if (places.length == 0) {
+				return;
+			}
+
+			markers.forEach(function(marker) {
+				marker.setMap(null);
+			});
+			markers = [];
+
+			var bounds = new google.maps.LatLngBounds();
+			places.forEach(function(place) {
+				if (!place.geometry) {
+					console.log("Returned place contains no geometry");
+					return;
+				}
+
+				markers.push(new google.maps.Marker({
+					map: map,
+					title: place.name,
+					position: place.geometry.location
+				}));
+
+				if (place.geometry.viewport) {
+					bounds.union(place.geometry.viewport);
+				} else {
+					bounds.extend(place.geometry.location);
+				}
+				icon: {
+						url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+					}
+			});
+			map.fitBounds(bounds);
+		});
+	}
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places&callback=initAutocomplete"
+		 async defer></script>
+
+{% endblock %}
